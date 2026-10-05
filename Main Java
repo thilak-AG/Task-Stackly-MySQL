@@ -1,0 +1,167 @@
+package com.sms;
+
+import com.sms.dao.*;
+import com.sms.model.Course;
+import com.sms.model.Student;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Scanner;
+
+public class Main {
+    private static final Scanner sc = new Scanner(System.in);
+    private static final StudentDAO studentDAO = new StudentDAO();
+    private static final CourseDAO courseDAO = new CourseDAO();
+    private static final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+    private static final AttendanceDAO attendanceDAO = new AttendanceDAO();
+    private static final MarksDAO marksDAO = new MarksDAO();
+    private static final ResultDAO resultDAO = new ResultDAO();
+
+    public static void main(String[] args) {
+        System.out.println("==============================================");
+        System.out.println("       STUDENT MANAGEMENT SYSTEM - JDBC       ");
+        System.out.println("==============================================");
+        while (true) {
+            printMenu();
+            int choice = readInt("Enter choice: ");
+            try {
+                switch (choice) {
+                    case 1 -> addStudent();
+                    case 2 -> updateStudent();
+                    case 3 -> deleteStudent();
+                    case 4 -> listStudents();
+                    case 5 -> addCourse();
+                    case 6 -> updateCourse();
+                    case 7 -> deleteCourse();
+                    case 8 -> listCourses();
+                    case 9 -> enroll();
+                    case 10 -> enrollmentDAO.listEnrollments();
+                    case 11 -> markAttendance();
+                    case 12 -> viewAttendance();
+                    case 13 -> enterMarks();
+                    case 14 -> generateResult();
+                    case 0 -> { System.out.println("Thank you!"); return; }
+                    default -> System.out.println("Invalid choice.");
+                }
+            } catch (SQLException | IllegalArgumentException e) {
+                System.out.println("Operation failed: " + e.getMessage());
+            }
+            System.out.println();
+        }
+    }
+
+    private static void printMenu() {
+        System.out.println("\n--------------- MAIN MENU ----------------");
+        System.out.println("1.  Register Student");
+        System.out.println("2.  Update Student");
+        System.out.println("3.  Delete Student");
+        System.out.println("4.  View Students");
+        System.out.println("5.  Add Course");
+        System.out.println("6.  Update Course");
+        System.out.println("7.  Delete Course");
+        System.out.println("8.  View Courses");
+        System.out.println("9.  Enroll Student in Course");
+        System.out.println("10. View Enrollments");
+        System.out.println("11. Mark Attendance");
+        System.out.println("12. View Attendance");
+        System.out.println("13. Enter / Update Marks");
+        System.out.println("14. Generate Result");
+        System.out.println("0.  Exit");
+        System.out.println("--------------------------------------------");
+    }
+
+    private static void addStudent() throws SQLException {
+        String name = readString("Name: "); String email = readString("Email: "); String phone = readString("Phone: ");
+        LocalDate dob = readDateOptional("DOB (yyyy-mm-dd, blank to skip): ");
+        int id = studentDAO.add(new Student(name, email, phone, dob));
+        System.out.println("Student registered. ID = " + id);
+    }
+
+    private static void updateStudent() throws SQLException {
+        int id = readInt("Student ID: "); String name = readString("Name: "); String email = readString("Email: "); String phone = readString("Phone: ");
+        LocalDate dob = readDateOptional("DOB (yyyy-mm-dd, blank to skip): ");
+        System.out.println(studentDAO.update(new Student(id, name, email, phone, dob)) ? "Student updated." : "Student not found.");
+    }
+
+    private static void deleteStudent() throws SQLException {
+        int id = readInt("Student ID: ");
+        System.out.println(studentDAO.delete(id) ? "Student deleted." : "Student not found.");
+    }
+
+    private static void listStudents() throws SQLException {
+        System.out.printf("%-5s %-22s %-28s %-15s %-12s%n", "ID", "Name", "Email", "Phone", "DOB");
+        for (Student s : studentDAO.findAll()) System.out.printf("%-5d %-22s %-28s %-15s %-12s%n", s.id(), s.name(), s.email(), s.phone(), s.dob());
+    }
+
+    private static void addCourse() throws SQLException {
+        String name = readString("Course name: "); int duration = readInt("Duration (months): ");
+        BigDecimal fee = new BigDecimal(readString("Fee: "));
+        System.out.println("Course created. ID = " + courseDAO.add(new Course(name, duration, fee)));
+    }
+
+    private static void updateCourse() throws SQLException {
+        int id = readInt("Course ID: "); String name = readString("Course name: "); int duration = readInt("Duration (months): ");
+        BigDecimal fee = new BigDecimal(readString("Fee: "));
+        System.out.println(courseDAO.update(new Course(id, name, duration, fee)) ? "Course updated." : "Course not found.");
+    }
+
+    private static void deleteCourse() throws SQLException {
+        int id = readInt("Course ID: ");
+        System.out.println(courseDAO.delete(id) ? "Course deleted." : "Course not found.");
+    }
+
+    private static void listCourses() throws SQLException {
+        System.out.printf("%-5s %-25s %-18s %-12s%n", "ID", "Course", "Duration(months)", "Fee");
+        for (Course c : courseDAO.findAll()) System.out.printf("%-5d %-25s %-18d %-12s%n", c.id(), c.name(), c.durationMonths(), c.fee());
+    }
+
+    private static void enroll() throws SQLException {
+        int studentId = readInt("Student ID: "); int courseId = readInt("Course ID: ");
+        System.out.println("Enrollment successful. ID = " + enrollmentDAO.enroll(studentId, courseId));
+    }
+
+    private static void markAttendance() throws SQLException {
+        int enrollmentId = readInt("Enrollment ID: ");
+        LocalDate date = readDateOptional("Attendance date (yyyy-mm-dd, blank=today): ");
+        if (date == null) date = LocalDate.now();
+        String status = readString("Status (PRESENT/ABSENT): ").toUpperCase();
+        if (!status.equals("PRESENT") && !status.equals("ABSENT")) throw new IllegalArgumentException("Status must be PRESENT or ABSENT.");
+        attendanceDAO.mark(enrollmentId, date, status);
+        System.out.println("Attendance saved.");
+    }
+
+    private static void viewAttendance() throws SQLException {
+        int enrollmentId = readInt("Enrollment ID: ");
+        attendanceDAO.view(enrollmentId); attendanceDAO.summary(enrollmentId);
+    }
+
+    private static void enterMarks() throws SQLException {
+        int enrollmentId = readInt("Enrollment ID: ");
+        double internal = Double.parseDouble(readString("Internal marks (0-40): "));
+        double external = Double.parseDouble(readString("External marks (0-60): "));
+        marksDAO.saveOrUpdate(enrollmentId, internal, external);
+        System.out.println("Marks saved. Total = " + (internal + external) + ", Grade = " + MarksDAO.grade(internal + external));
+    }
+
+    private static void generateResult() throws SQLException { resultDAO.generate(readInt("Student ID: ")); }
+
+    private static int readInt(String prompt) {
+        while (true) {
+            try { return Integer.parseInt(readString(prompt)); }
+            catch (NumberFormatException e) { System.out.println("Enter a valid number."); }
+        }
+    }
+
+    private static String readString(String prompt) { System.out.print(prompt); return sc.nextLine().trim(); }
+
+    private static LocalDate readDateOptional(String prompt) {
+        while (true) {
+            String value = readString(prompt);
+            if (value.isBlank()) return null;
+            try { return LocalDate.parse(value); }
+            catch (DateTimeParseException e) { System.out.println("Use yyyy-mm-dd format."); }
+        }
+    }
+}
