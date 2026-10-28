@@ -1,0 +1,155 @@
+package com.example.foodorder.model;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@RequestMapping
+
+public class FoodOrder {
+
+    private int orderId;
+    private String customerName;
+    private String foodItem;
+    private double price;
+    private int quantity;
+
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getFoodItem() {
+        return foodItem;
+    }
+
+    public void setFoodItem(String foodItem) {
+        this.foodItem = foodItem;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public double getTotalPrice() {
+        return price * quantity;
+    }
+}
+
+package com.example.foodorder.service;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.example.foodorder.model.FoodOrder;
+
+@Service
+public class FoodOrderService {
+
+    private Map<Integer, FoodOrder> orders = new HashMap<>();
+
+    public FoodOrder addOrder(FoodOrder order) {
+        orders.put(order.getOrderId(), order);
+        return order;
+    }
+
+    public Collection<FoodOrder> getAllOrders() {
+        return orders.values();
+    }
+
+    public FoodOrder getOrderById(int id) {
+        return orders.get(id);
+    }
+
+    public FoodOrder updateOrder(int id, FoodOrder order) {
+        if (!orders.containsKey(id)) {
+            return null;
+        }
+
+        order.setOrderId(id);
+        orders.put(id, order);
+        return order;
+    }
+
+    public boolean deleteOrder(int id) {
+        return orders.remove(id) != null;
+    }
+}
+
+
+package com.example.foodorder.controller;
+
+import java.util.Collection;
+
+import org.springframework.web.bind.annotation.*;
+
+import com.example.foodorder.model.FoodOrder;
+import com.example.foodorder.service.FoodOrderService;
+
+@RestController
+@RequestMapping("/orders")
+public class FoodOrderController {
+
+    private final FoodOrderService service;
+
+    public FoodOrderController(FoodOrderService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    public FoodOrder addOrder(@RequestBody FoodOrder order) {
+        return service.addOrder(order);
+    }
+
+    @GetMapping
+    public Collection<FoodOrder> getAllOrders() {
+        return service.getAllOrders();
+    }
+
+    @GetMapping("/{id}")
+    public FoodOrder getOrderById(@PathVariable int id) {
+        return service.getOrderById(id);
+    }
+
+    @PutMapping("/{id}")
+    public FoodOrder updateOrder(
+            @PathVariable int id,
+            @RequestBody FoodOrder order) {
+        return service.updateOrder(id, order);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteOrder(@PathVariable int id) {
+        boolean deleted = service.deleteOrder(id);
+
+        if (deleted) {
+            return "Order deleted successfully";
+        }
+
+        return "Order not found";
+    }
+}
