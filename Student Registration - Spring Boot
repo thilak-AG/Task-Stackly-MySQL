@@ -1,0 +1,171 @@
+package com.example.studentregistration.model;
+
+
+
+public class Student {
+
+    private int studentId;
+    private String studentName;
+    private String courseName;
+    private String email;
+    private int age;
+
+    public Student() {
+    }
+
+    public Student(int studentId, String studentName,
+            String courseName, String email, int age) {
+        this.studentId = studentId;
+        this.studentName = studentName;
+        this.courseName = courseName;
+        this.email = email;
+        this.age = age;
+    }
+
+    public int getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(int studentId) {
+        this.studentId = studentId;
+    }
+
+    public String getStudentName() {
+        return studentName;
+    }
+
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+}
+
+
+
+package com.example.studentregistration.service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import com.example.studentregistration.model.Student;
+
+@Service
+public class StudentService {
+
+    private List<Student> students = new ArrayList<>();
+
+    // Register student
+    public Student registerStudent(Student student) {
+        students.add(student);
+        return student;
+    }
+
+    // Get all students
+    public List<Student> getAllStudents() {
+        return students;
+    }
+
+    // Find student by ID
+    public Student getStudentById(int id) {
+        for (Student s : students) {
+            if (s.getStudentId() == id) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    // Delete student
+    public String deleteStudent(int id) {
+        boolean removed =
+                students.removeIf(
+                    s -> s.getStudentId() == id
+                );
+
+        if (removed) {
+            return "Student registration deleted successfully";
+        } else {
+            return "Student not found";
+        }
+    }
+}
+
+
+
+package com.example.studentregistration.Controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.studentregistration.model.Student;
+import com.example.studentregistration.service.StudentService;
+
+@RestController
+@RequestMapping("/students")
+public class StudentController {
+
+    private final StudentService service;
+
+    public StudentController(StudentService service) {
+        this.service = service;
+    }
+
+    // Register student
+    @PostMapping
+    public Student registerStudent(
+            @RequestBody Student student) {
+        return service.registerStudent(student);
+    }
+
+    // Get all students
+    @GetMapping
+    public List<Student> getAllStudents() {
+        return service.getAllStudents();
+    }
+
+    // Find student by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Student> getStudentById(
+            @PathVariable int id) {
+
+        Student student = service.getStudentById(id);
+
+        if (student == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(student);
+    }
+
+    // Delete student
+    @DeleteMapping("/{id}")
+    public String deleteStudent(@PathVariable int id) {
+        return service.deleteStudent(id);
+    }
+}
