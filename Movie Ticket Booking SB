@@ -1,0 +1,147 @@
+package com.example.movieticketbooking.model;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+
+public class MovieTicket {
+
+    private int ticketId;
+
+    @NotBlank(message = "Movie name is required")
+    private String movieName;
+
+    @NotBlank(message = "Customer name cannot be empty")
+    private String customerName;
+
+    private String seatNumber;
+
+    @Positive(message = "Ticket price must be positive")
+    private double ticketPrice;
+
+    // Default constructor
+    public MovieTicket() {
+    }
+
+    // Getter and Setter for ticketId
+    public int getTicketId() {
+        return ticketId;
+    }
+
+    public void setTicketId(int ticketId) {
+        this.ticketId = ticketId;
+    }
+
+    // Getter and Setter for movieName
+    public String getMovieName() {
+        return movieName;
+    }
+
+    public void setMovieName(String movieName) {
+        this.movieName = movieName;
+    }
+
+    // Getter and Setter for customerName
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    // Getter and Setter for seatNumber
+    public String getSeatNumber() {
+        return seatNumber;
+    }
+
+    public void setSeatNumber(String seatNumber) {
+        this.seatNumber = seatNumber;
+    }
+
+    // Getter and Setter for ticketPrice
+    public double getTicketPrice() {
+        return ticketPrice;
+    }
+
+    public void setTicketPrice(double ticketPrice) {
+        this.ticketPrice = ticketPrice;
+    }
+}
+
+
+
+
+
+package com.example.movieticketbooking.service;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.movieticketbooking.model.MovieTicket;
+
+@Service
+public class MovieTicketService {
+
+    private final List<MovieTicket> tickets =
+            new ArrayList<>();
+
+    public MovieTicket bookTicket(MovieTicket ticket) {
+        tickets.add(ticket);
+        return ticket;
+    }
+
+    public List<MovieTicket> getAllTickets() {
+        return tickets;
+    }
+
+    public MovieTicket getTicketById(int id) {
+        return tickets.stream()
+                .filter(t -> t.getTicketId() == id)
+                .findFirst()
+                .orElse(null);
+    }
+}
+
+
+
+package com.example.movieticketbooking.controller;
+
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
+import com.example.movieticketbooking.model.MovieTicket;
+import com.example.movieticketbooking.service.MovieTicketService;
+
+@RestController
+@RequestMapping("/tickets")
+public class MovieTicketController {
+
+    private final MovieTicketService service;
+
+    public MovieTicketController(MovieTicketService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    public MovieTicket bookTicket(
+            @Valid @RequestBody MovieTicket ticket) {
+        return service.bookTicket(ticket);
+    }
+
+    @GetMapping
+    public List<MovieTicket> getAllTickets() {
+        return service.getAllTickets();
+    }
+
+    @GetMapping("/{id}")
+    public MovieTicket getTicketById(
+            @PathVariable("id") int id) {
+        return service.getTicketById(id);
+    }
+}
